@@ -2,7 +2,7 @@ let allData = [];
 
 
 
-fetch("data.csv")
+fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSm2E2NtnS0wKaXZw4SQzJxXn9jrCuDDfetKCQfoUnsFz2TXYetnWGZTyagdFzkSzQ-z7q41rjbZR1F/pub?output=csv")
 
 .then(response => response.text())
 
