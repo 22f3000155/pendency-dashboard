@@ -83,18 +83,13 @@ function renderTable(data){
 
         if(pendingDays > 30){
 
-            tr.classList.add("redRow");
-        }
+    tr.classList.add("redRow");
+}
 
-        else if(pendingDays > 7){
+else{
 
-            tr.classList.add("orangeRow");
-        }
-
-        else{
-
-            tr.classList.add("greenRow");
-        }
+    tr.classList.add("greenRow");
+}
 
 
         tr.innerHTML = `
@@ -411,7 +406,73 @@ function applyFilters(){
     createCharts(filtered);
 }
 
+// Download Filtered CSV
 
+document.getElementById(
+    "downloadBtn"
+)
+.addEventListener("click", () => {
+
+    let rows = [];
+
+    // Headers
+    rows.push([
+        "Service",
+        "Applicant",
+        "ACK",
+        "Pending At",
+        "Role",
+        "Office",
+        "Submission Date",
+        "Pending Days"
+    ]);
+
+
+    // Visible table rows
+    document
+    .querySelectorAll("#reportTable tbody tr")
+    .forEach(tr => {
+
+        let cols = [];
+
+        tr.querySelectorAll("td")
+        .forEach(td => {
+
+            cols.push(td.innerText);
+        });
+
+        rows.push(cols);
+    });
+
+
+    // Convert to CSV
+    let csvContent =
+        rows.map(e => e.join(","))
+        .join("\n");
+
+
+    // Download
+    let blob =
+        new Blob(
+            [csvContent],
+            { type:"text/csv" }
+        );
+
+    let url =
+        URL.createObjectURL(blob);
+
+    let a =
+        document.createElement("a");
+
+    a.href = url;
+
+    a.download =
+        "pendency_report.csv";
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+});
 
 
 
