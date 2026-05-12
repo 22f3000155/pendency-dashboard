@@ -1,5 +1,8 @@
+
 let allData = [];
 
+let officeChart;
+let serviceChart;
 
 
 fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSm2E2NtnS0wKaXZw4SQzJxXn9jrCuDDfetKCQfoUnsFz2TXYetnWGZTyagdFzkSzQ-z7q41rjbZR1F/pub?output=csv")
@@ -46,11 +49,13 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSm2E2NtnS0wKaXZw4SQzJxXn
 
 
     renderTable(allData);
+
+    updateSummary(allData);
+
+    createCharts(allData);
+
+    updateLastUpdated();
 });
-
-
-
-
 
 
 // Render Table
@@ -62,7 +67,6 @@ function renderTable(data){
             "#reportTable tbody"
         );
 
-
     tbody.innerHTML = "";
 
 
@@ -73,13 +77,9 @@ function renderTable(data){
                 item.submissionDate
             );
 
-
         let tr =
             document.createElement("tr");
 
-
-
-        // Row Color
 
         if(pendingDays > 30){
 
@@ -95,7 +95,6 @@ function renderTable(data){
 
             tr.classList.add("greenRow");
         }
-
 
 
         tr.innerHTML = `
@@ -118,51 +117,158 @@ function renderTable(data){
 
         `;
 
-
         tbody.appendChild(tr);
     });
 }
 
 
-
-
-
-
-
-// Calculate Pending Days
+// Pending Days
 
 function calculateDays(dateStr){
 
     let parts =
         dateStr.split("-");
 
-
     let day =
         parseInt(parts[0]);
-
 
     let month =
         parseInt(parts[1]) - 1;
 
-
     let year =
         parseInt(parts[2]);
-
 
     let submitDate =
         new Date(year, month, day);
 
-
     let today =
         new Date();
-
 
     let diff =
         today - submitDate;
 
-
     return Math.floor(
         diff / (1000 * 60 * 60 * 24)
+    );
+}
+
+
+// Summary Cards
+
+function updateSummary(data){
+
+    document.getElementById(
+        "totalPending"
+    ).innerText = data.length;
+
+
+    let above30 =
+        data.filter(d =>
+            calculateDays(d.submissionDate) > 30
+        ).length;
+
+
+    let below30 =
+        data.filter(d =>
+            calculateDays(d.submissionDate) <= 30
+        ).length;
+
+
+    let offices =
+        new Set(data.map(d => d.office));
+
+
+    document.getElementById(
+        "above30"
+    ).innerText = above30;
+
+
+    document.getElementById(
+        "below30"
+    ).innerText = below30;
+
+
+    document.getElementById(
+        "totalOffices"
+    ).innerText = offices.size;
+}
+
+// Charts
+
+function createCharts(data){
+
+    let officeCounts = {};
+
+    let serviceCounts = {};
+
+
+    data.forEach(item => {
+
+        officeCounts[item.office] =
+            (officeCounts[item.office] || 0) + 1;
+
+        serviceCounts[item.service] =
+            (serviceCounts[item.service] || 0) + 1;
+    });
+
+
+
+    // Office Chart
+
+    if(officeChart){
+
+        officeChart.destroy();
+    }
+
+    officeChart = new Chart(
+
+        document.getElementById("officeChart"),
+
+        {
+
+            type:"bar",
+
+            data:{
+
+                labels:Object.keys(officeCounts),
+
+                datasets:[{
+
+                    label:"Office Wise Pending",
+
+                    data:Object.values(officeCounts)
+                }]
+            }
+        }
+    );
+
+
+
+    // Service Chart
+
+    if(serviceChart){
+
+        serviceChart.destroy();
+    }
+
+    serviceChart = new Chart(
+
+        document.getElementById("serviceChart"),
+
+        {
+
+            type:"pie",
+
+            data:{
+
+                labels:Object.keys(serviceCounts),
+
+                datasets:[{
+
+                    data:Object.values(serviceCounts)
+                }]
+            }
+        }
     );
 }
 
@@ -172,11 +278,23 @@ function calculateDays(dateStr){
 
 
 
+// Last Updated
 
-// Apply Filters
+function updateLastUpdated(){
+
+    let now =
+        new Date();
+
+    document.getElementById(
+        "lastUpdated"
+    ).innerText =
+        "Last Updated: " +
+        now.toLocaleString();
+}
+
+// Filters
 
 function applyFilters(){
-
 
     let service =
         document.getElementById(
@@ -184,7 +302,6 @@ function applyFilters(){
         )
         .value
         .toLowerCase();
-
 
 
     let office =
@@ -195,14 +312,12 @@ function applyFilters(){
         .toLowerCase();
 
 
-
     let pendingAt =
         document.getElementById(
             "pendingFilter"
         )
         .value
         .toLowerCase();
-
 
 
     let days =
@@ -213,11 +328,8 @@ function applyFilters(){
 
 
 
-
-
     let filtered =
         allData.filter(item => {
-
 
         let pendingDays =
             calculateDays(
@@ -225,11 +337,9 @@ function applyFilters(){
             );
 
 
-
         return (
 
             (
-
                 service === ""
 
                 ||
@@ -242,7 +352,6 @@ function applyFilters(){
             &&
 
             (
-
                 office === ""
 
                 ||
@@ -255,7 +364,6 @@ function applyFilters(){
             &&
 
             (
-
                 pendingAt === ""
 
                 ||
@@ -274,7 +382,6 @@ function applyFilters(){
                 ||
 
                 (
-
                     days === "above30"
 
                     &&
@@ -285,7 +392,6 @@ function applyFilters(){
                 ||
 
                 (
-
                     days === "below30"
 
                     &&
@@ -299,9 +405,11 @@ function applyFilters(){
 
 
     renderTable(filtered);
+
+    updateSummary(filtered);
+
+    createCharts(filtered);
 }
-
-
 
 
 
@@ -324,3 +432,14 @@ document
         applyFilters
     );
 });
+
+
+
+
+// Auto Refresh every 30 sec
+
+setInterval(() => {
+
+    location.reload();
+
+}, 30000);

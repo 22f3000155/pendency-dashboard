@@ -7,38 +7,67 @@
 
     <link rel="stylesheet" href="style.css">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body>
 
     <h1>Pendency Dashboard</h1>
 
+    <div id="lastUpdated"></div>
+
+
+    <!-- Summary Cards -->
+
+    <div class="summaryCards">
+
+        <div class="card">
+            <h2 id="totalPending">0</h2>
+            <p>Total Pending</p>
+        </div>
+
+        <div class="card redCard">
+            <h2 id="above30">0</h2>
+            <p>Above 30 Days</p>
+        </div>
+
+        <div class="card greenCard">
+            <h2 id="below30">0</h2>
+            <p>Below 30 Days</p>
+        </div>
+
+        <div class="card blueCard">
+            <h2 id="totalOffices">0</h2>
+            <p>Total Offices</p>
+        </div>
+
+    </div>
+
+
 
     <!-- Filters -->
+
     <div class="filters">
 
-        <!-- Service Search -->
         <input
             type="text"
             id="serviceFilter"
             placeholder="Search Service"
         >
 
-        <!-- Office Search -->
         <input
             type="text"
             id="officeFilter"
             placeholder="Search Office"
         >
 
-        <!-- Pending At Search -->
         <input
             type="text"
             id="pendingFilter"
             placeholder="Search Pending At"
         >
 
-        <!-- Days Filter -->
         <select id="daysFilter">
 
             <option value="">All Days</option>
@@ -57,7 +86,23 @@
 
 
 
+    <!-- Charts -->
+
+    <div class="charts">
+
+    <div class="chartBox">
+        <canvas id="officeChart"></canvas>
+    </div>
+
+    <div class="chartBox">
+        <canvas id="serviceChart"></canvas>
+    </div>
+
+</div>
+
+
     <!-- Table -->
+
     <table id="reportTable">
 
         <thead>
@@ -89,7 +134,6 @@
         </tbody>
 
     </table>
-
 
 
     <script src="script.js"></script>
