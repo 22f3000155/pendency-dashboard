@@ -5,11 +5,9 @@
 
     <title>Pendency Dashboard</title>
 
-    <link rel="stylesheet" href="./style.css">
-
+    <link rel="stylesheet" href="./style.css?v=8">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
 
 </head>
 
@@ -25,26 +23,39 @@
     <div class="summaryCards">
 
         <div class="card">
+
             <h2 id="totalPending">0</h2>
+
             <p>Total Pending</p>
+
         </div>
 
         <div class="card redCard">
+
             <h2 id="above30">0</h2>
-            <p>Above 30 Days</p>
+
+            <p>Exceeded SLA</p>
+
         </div>
 
         <div class="card greenCard">
+
             <h2 id="below30">0</h2>
-            <p>Below 30 Days</p>
+
+            <p>Within SLA</p>
+
         </div>
 
         <div class="card blueCard">
+
             <h2 id="totalOffices">0</h2>
+
             <p>Total Offices</p>
+
         </div>
 
     </div>
+
 
 
 
@@ -70,16 +81,19 @@
             placeholder="Search Pending At"
         >
 
+
         <select id="daysFilter">
 
-            <option value="">All Days</option>
+            <option value="">
+                All Applications
+            </option>
 
             <option value="above30">
-                Above 30 Days
+                Exceeded SLA
             </option>
 
             <option value="below30">
-                Below 30 Days
+                Within SLA
             </option>
 
         </select>
@@ -87,22 +101,41 @@
     </div>
 
 
-<button id="downloadBtn">
-    Download Filtered Report
-</button>
+
+
+
+    <!-- Download Button -->
+
+    <button id="downloadBtn">
+
+        Download Filtered Report
+
+    </button>
+
+
+
+
+
     <!-- Charts -->
 
     <div class="charts">
 
-    <div class="chartBox">
-        <canvas id="officeChart"></canvas>
+        <div class="chartBox">
+
+            <canvas id="officeChart"></canvas>
+
+        </div>
+
+        <div class="chartBox">
+
+            <canvas id="serviceChart"></canvas>
+
+        </div>
+
     </div>
 
-    <div class="chartBox">
-        <canvas id="serviceChart"></canvas>
-    </div>
 
-</div>
+
 
 
     <!-- Table -->
@@ -129,6 +162,10 @@
 
                 <th>Pending Days</th>
 
+                <th>Limit</th>
+
+                <th>Exceeded By</th>
+
             </tr>
 
         </thead>
@@ -140,8 +177,8 @@
     </table>
 
 
-    <script src="./script.js"></script>
-    
+
+    <script src="./script.js?v=8"></script>
 
 </body>
 

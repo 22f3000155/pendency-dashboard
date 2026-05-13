@@ -1,9 +1,71 @@
-
 let allData = [];
 
 let officeChart;
 let serviceChart;
 
+
+
+
+// ==========================
+// SERVICE TIME LIMITS
+// ==========================
+
+function getServiceLimit(service){
+
+    service = service.toLowerCase();
+
+
+    if(service.includes("permanent resident")){
+        return 14;
+    }
+
+    if(service.includes("birth")){
+        return 10;
+    }
+
+    if(service.includes("death")){
+        return 10;
+    }
+
+    if(service.includes("caste")){
+        return 30;
+    }
+
+    if(service.includes("gorkha")){
+        return 30;
+    }
+
+    if(service.includes("income")){
+        return 10;
+    }
+
+    if(service.includes("non creamy")){
+        return 30;
+    }
+
+    if(service.includes("next of kin")){
+        return 30;
+    }
+
+    if(service.includes("fairs")){
+        return 10;
+    }
+
+    if(service.includes("senior citizen")){
+        return 30;
+    }
+
+
+    return 30;
+}
+
+
+
+
+
+// ==========================
+// FETCH DATA
+// ==========================
 
 fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSm2E2NtnS0wKaXZw4SQzJxXn9jrCuDDfetKCQfoUnsFz2TXYetnWGZTyagdFzkSzQ-z7q41rjbZR1F/pub?output=csv")
 
@@ -11,16 +73,12 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSm2E2NtnS0wKaXZw4SQzJxXn
 
 .then(data => {
 
-    const lines =
-        data.trim().split("\n");
+    const lines = data.trim().split("\n");
 
 
-    allData =
-        lines.slice(1).map(line => {
+    allData = lines.slice(1).map(line => {
 
-        const cols =
-            line.split(",");
-
+        const cols = line.split(",");
 
         return {
 
@@ -58,7 +116,48 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSm2E2NtnS0wKaXZw4SQzJxXn
 });
 
 
-// Render Table
+
+
+
+// ==========================
+// CALCULATE PENDING DAYS
+// ==========================
+
+function calculateDays(dateStr){
+
+    if(!dateStr){
+        return 0;
+    }
+
+    let parts = dateStr.split("-");
+
+    let day = parseInt(parts[0]);
+
+    let month = parseInt(parts[1]) - 1;
+
+    let year = parseInt(parts[2]);
+
+    let submitDate =
+        new Date(year, month, day);
+
+    let today =
+        new Date();
+
+    let diff =
+        today - submitDate;
+
+    return Math.floor(
+        diff / (1000 * 60 * 60 * 24)
+    );
+}
+
+
+
+
+
+// ==========================
+// RENDER TABLE
+// ==========================
 
 function renderTable(data){
 
@@ -77,19 +176,28 @@ function renderTable(data){
                 item.submissionDate
             );
 
+
+        let limit =
+            getServiceLimit(item.service);
+
+
+        let exceededBy =
+            pendingDays - limit;
+
+
         let tr =
             document.createElement("tr");
 
 
-        if(pendingDays > 30){
+        if(pendingDays > limit){
 
-    tr.classList.add("redRow");
-}
+            tr.classList.add("redRow");
+        }
 
-else{
+        else{
 
-    tr.classList.add("greenRow");
-}
+            tr.classList.add("greenRow");
+        }
 
 
         tr.innerHTML = `
@@ -110,6 +218,19 @@ else{
 
             <td>${pendingDays}</td>
 
+            <td>${limit}</td>
+
+            <td>
+
+                ${
+                    exceededBy > 0
+                    ?
+                    exceededBy + " Days"
+                    :
+                    "Within Limit"
+                }
+
+            </td>
         `;
 
         tbody.appendChild(tr);
@@ -117,38 +238,12 @@ else{
 }
 
 
-// Pending Days
-
-function calculateDays(dateStr){
-
-    let parts =
-        dateStr.split("-");
-
-    let day =
-        parseInt(parts[0]);
-
-    let month =
-        parseInt(parts[1]) - 1;
-
-    let year =
-        parseInt(parts[2]);
-
-    let submitDate =
-        new Date(year, month, day);
-
-    let today =
-        new Date();
-
-    let diff =
-        today - submitDate;
-
-    return Math.floor(
-        diff / (1000 * 60 * 60 * 24)
-    );
-}
 
 
-// Summary Cards
+
+// ==========================
+// SUMMARY CARDS
+// ==========================
 
 function updateSummary(data){
 
@@ -157,30 +252,52 @@ function updateSummary(data){
     ).innerText = data.length;
 
 
-    let above30 =
-        data.filter(d =>
-            calculateDays(d.submissionDate) > 30
-        ).length;
+    let exceeded =
+        data.filter(d => {
+
+            let pendingDays =
+                calculateDays(
+                    d.submissionDate
+                );
+
+            let limit =
+                getServiceLimit(d.service);
+
+            return pendingDays > limit;
+
+        }).length;
 
 
-    let below30 =
-        data.filter(d =>
-            calculateDays(d.submissionDate) <= 30
-        ).length;
+    let withinLimit =
+        data.filter(d => {
+
+            let pendingDays =
+                calculateDays(
+                    d.submissionDate
+                );
+
+            let limit =
+                getServiceLimit(d.service);
+
+            return pendingDays <= limit;
+
+        }).length;
 
 
     let offices =
-        new Set(data.map(d => d.office));
+        new Set(
+            data.map(d => d.office)
+        );
 
 
     document.getElementById(
         "above30"
-    ).innerText = above30;
+    ).innerText = exceeded;
 
 
     document.getElementById(
         "below30"
-    ).innerText = below30;
+    ).innerText = withinLimit;
 
 
     document.getElementById(
@@ -188,7 +305,13 @@ function updateSummary(data){
     ).innerText = offices.size;
 }
 
-// Charts
+
+
+
+
+// ==========================
+// CHARTS
+// ==========================
 
 function createCharts(data){
 
@@ -208,12 +331,54 @@ function createCharts(data){
 
 
 
-    // Office Chart
+    // SORT OFFICE DATA
+
+    let sortedOffice =
+        Object.entries(officeCounts)
+
+        .sort((a,b) => b[1] - a[1])
+
+        .slice(0,10);
+
+
+    let officeLabels =
+        sortedOffice.map(item => item[0]);
+
+    let officeValues =
+        sortedOffice.map(item => item[1]);
+
+
+
+    // SERVICE DATA
+
+    let serviceLabels =
+        Object.keys(serviceCounts);
+
+    let serviceValues =
+        Object.values(serviceCounts);
+
+
+
+
+    // DESTROY OLD CHARTS
 
     if(officeChart){
 
         officeChart.destroy();
     }
+
+    if(serviceChart){
+
+        serviceChart.destroy();
+    }
+
+
+
+
+
+    // ==========================
+    // OFFICE BAR CHART
+    // ==========================
 
     officeChart = new Chart(
 
@@ -225,26 +390,79 @@ function createCharts(data){
 
             data:{
 
-                labels:Object.keys(officeCounts),
+                labels:officeLabels,
 
                 datasets:[{
 
-                    label:"Office Wise Pending",
+                    label:"Pending Cases",
 
-                    data:Object.values(officeCounts)
+                    data:officeValues,
+
+                    backgroundColor:
+                    "rgba(54, 162, 235, 0.7)",
+
+                    borderColor:
+                    "rgba(54, 162, 235, 1)",
+
+                    borderWidth:1,
+
+                    borderRadius:8
                 }]
+            },
+
+            options:{
+
+                responsive:true,
+
+                maintainAspectRatio:false,
+
+                animation:{
+                    duration:1200
+                },
+
+                interaction:{
+                    mode:"index",
+                    intersect:false
+                },
+
+                plugins:{
+
+                    legend:{
+                        display:false
+                    },
+
+                    title:{
+                        display:true,
+                        text:"Top 10 Office Wise Pendency"
+                    }
+                },
+
+                scales:{
+
+                    x:{
+
+                        ticks:{
+                            maxRotation:45,
+                            minRotation:45
+                        }
+                    },
+
+                    y:{
+                        beginAtZero:true
+                    }
+                }
             }
         }
     );
 
 
 
-    // Service Chart
 
-    if(serviceChart){
 
-        serviceChart.destroy();
-    }
+
+    // ==========================
+    // SERVICE DOUGHNUT CHART
+    // ==========================
 
     serviceChart = new Chart(
 
@@ -252,16 +470,60 @@ function createCharts(data){
 
         {
 
-            type:"pie",
+            type:"doughnut",
 
             data:{
 
-                labels:Object.keys(serviceCounts),
+                labels:serviceLabels,
 
                 datasets:[{
 
-                    data:Object.values(serviceCounts)
+                    data:serviceValues,
+
+                    backgroundColor:[
+
+                        "#36A2EB",
+                        "#FF6384",
+                        "#4BC0C0",
+                        "#FFCE56",
+                        "#9966FF",
+                        "#FF9F40",
+                        "#8BC34A",
+                        "#E91E63",
+                        "#009688",
+                        "#795548"
+                    ],
+
+                    borderWidth:1
                 }]
+            },
+
+            options:{
+
+                responsive:true,
+
+                maintainAspectRatio:false,
+
+                animation:{
+                    duration:1200
+                },
+
+                interaction:{
+                    mode:"index",
+                    intersect:false
+                },
+
+                plugins:{
+
+                    legend:{
+                        position:"bottom"
+                    },
+
+                    title:{
+                        display:true,
+                        text:"Service Wise Pendency"
+                    }
+                }
             }
         }
     );
@@ -271,14 +533,13 @@ function createCharts(data){
 
 
 
-
-
-// Last Updated
+// ==========================
+// LAST UPDATED
+// ==========================
 
 function updateLastUpdated(){
 
-    let now =
-        new Date();
+    let now = new Date();
 
     document.getElementById(
         "lastUpdated"
@@ -287,7 +548,13 @@ function updateLastUpdated(){
         now.toLocaleString();
 }
 
-// Filters
+
+
+
+
+// ==========================
+// FILTERS
+// ==========================
 
 function applyFilters(){
 
@@ -330,6 +597,10 @@ function applyFilters(){
             calculateDays(
                 item.submissionDate
             );
+
+
+        let limit =
+            getServiceLimit(item.service);
 
 
         return (
@@ -381,7 +652,7 @@ function applyFilters(){
 
                     &&
 
-                    pendingDays > 30
+                    pendingDays > limit
                 )
 
                 ||
@@ -391,7 +662,7 @@ function applyFilters(){
 
                     &&
 
-                    pendingDays <= 30
+                    pendingDays <= limit
                 )
             )
         );
@@ -406,7 +677,13 @@ function applyFilters(){
     createCharts(filtered);
 }
 
-// Download Filtered CSV
+
+
+
+
+// ==========================
+// DOWNLOAD CSV
+// ==========================
 
 document.getElementById(
     "downloadBtn"
@@ -415,8 +692,9 @@ document.getElementById(
 
     let rows = [];
 
-    // Headers
+
     rows.push([
+
         "Service",
         "Applicant",
         "ACK",
@@ -424,18 +702,21 @@ document.getElementById(
         "Role",
         "Office",
         "Submission Date",
-        "Pending Days"
+        "Pending Days",
+        "Limit",
+        "Exceeded By"
     ]);
 
 
-    // Visible table rows
     document
     .querySelectorAll("#reportTable tbody tr")
+
     .forEach(tr => {
 
         let cols = [];
 
         tr.querySelectorAll("td")
+
         .forEach(td => {
 
             cols.push(td.innerText);
@@ -445,13 +726,11 @@ document.getElementById(
     });
 
 
-    // Convert to CSV
     let csvContent =
         rows.map(e => e.join(","))
         .join("\n");
 
 
-    // Download
     let blob =
         new Blob(
             [csvContent],
@@ -477,10 +756,14 @@ document.getElementById(
 
 
 
-// Event Listeners
+
+// ==========================
+// EVENT LISTENERS
+// ==========================
 
 document
 .querySelectorAll("input,select")
+
 .forEach(element => {
 
     element.addEventListener(
@@ -497,7 +780,10 @@ document
 
 
 
-// Auto Refresh every 30 sec
+
+// ==========================
+// AUTO REFRESH
+// ==========================
 
 setInterval(() => {
 
